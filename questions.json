@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-network-poe",
+    "source": "令和7年春期　問29",
+    "question": "無線LANのアクセスポイントやIP電話機などに、LANケーブルを利用して給電も行う仕組みはどれか。",
+    "choices": [
+      {
+        "text": "PLC",
+        "overview": "電力線を通信媒体として利用する技術でありLANケーブル給電ではない。",
+        "detail": "PLC（Power Line Communication）は家庭やオフィスの電力線を通信回線として利用する技術である。LANケーブルを通じて機器へ電力供給する仕組みではない。",
+        "link": ""
+      },
+      {
+        "text": "PoE",
+        "overview": "LANケーブルを通じて電力を供給する技術である。",
+        "detail": "PoE（Power over Ethernet）は、Ethernetケーブルを用いてデータ通信と同時に電力供給を行う技術である。IEEE 802.3afや802.3at、802.3btなどの規格があり、アクセスポイントやIP電話機などに広く利用されている。",
+        "link": ""
+      },
+      {
+        "text": "UPS",
+        "overview": "停電時に電力を供給する装置でありLANケーブル給電ではない。",
+        "detail": "UPS（Uninterruptible Power Supply）は停電時などに電力を供給する無停電電源装置である。LANケーブルを利用して機器へ給電する仕組みとは異なる。",
+        "link": ""
+      },
+      {
+        "text": "USB",
+        "overview": "周辺機器接続用インタフェースでありLANケーブル給電ではない。",
+        "detail": "USB（Universal Serial Bus）は周辺機器接続用インタフェースであり、給電機能も持つがEthernetケーブルを利用する仕組みではない。",
+        "link": ""
+      }
+    ],
+    "correct_indices": [
+      1
+    ],
+    "category": "テクノロジ系 / ネットワーク"
+  },
+  {
     "id": "ap-tech-network-csma-cd",
     "source": "令和6年春期　問30",
     "question": "CSMA/CD方式のLANに接続されたノードの送信動作として、適切なものはどれか。",
