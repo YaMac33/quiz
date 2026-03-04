@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-security-cookie-secure",
+    "source": "令和7年春期　問41",
+    "question": "cookieにSecure属性を設定しなかったときと比較した、設定したときのWebブラウザの動作として、適切なものはどれか。",
+    "choices": [
+      {
+        "text": "cookieに設定された有効期間を過ぎると、Webブラウザがcookieを無効であると判断する。",
+        "overview": "これはExpires属性の説明でありSecure属性の説明ではない。",
+        "detail": "Expires属性はcookieの有効期限を指定するための属性である。指定した日時を過ぎるとブラウザはcookieを無効として扱う。Secure属性とは無関係である。",
+        "link": ""
+      },
+      {
+        "text": "URL内のスキームがhttpsのときだけ、Webブラウザからcookieが送出される。",
+        "overview": "Secure属性はHTTPS通信時のみcookieを送信するよう制限するため正しい。",
+        "detail": "Secure属性が設定されたcookieは、HTTPSなどの暗号化通信のときのみブラウザから送信される。HTTP通信では送信されないため、盗聴などによるcookieの漏えいリスクを低減できる。",
+        "link": ""
+      },
+      {
+        "text": "WebブラウザがアクセスするURL内のパスとcookieに設定されたパスのプレフィックスが一致するときだけ、Webブラウザからcookieが送出される。",
+        "overview": "これはPath属性の説明でありSecure属性の説明ではない。",
+        "detail": "Path属性はcookieが送信されるURLパスの範囲を指定する属性である。指定したパスのプレフィックスに一致するURLへアクセスしたときのみcookieが送信される。",
+        "link": ""
+      },
+      {
+        "text": "WebブラウザではJavaScriptによるcookieの読出しが禁止される。",
+        "overview": "これはHttpOnly属性の説明でありSecure属性ではない。",
+        "detail": "HttpOnly属性はJavaScriptからcookieを参照できないようにする属性であり、XSSによるcookie窃取を防止する目的で利用される。Secure属性とは役割が異なる。",
+        "link": ""
+      }
+    ],
+    "correct_indices": [
+      1
+    ],
+    "category": "テクノロジ系 / ネットワーク"
+  },
+  {
     "id": "ap-tech-network-url-structure",
     "source": "平成27年秋期　問35",
     "question": "http://host.example.co.jp:8080/file で示されるURLの説明として、適切なものはどれか。",
