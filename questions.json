@@ -176,50 +176,6 @@
     }
   },
   {
-    "id": "ap-strategy-innovation-darwin-sea",
-    "question": "企業における研究、開発、事業化、そして産業化へとステージが移行する過程の中で、事業化から産業化に移行するときの、競合製品との競争過程にある障壁を何と呼ぶか。",
-    "choices": [
-      {
-        "text": "キャズム",
-        "overview": "初期市場とメイン市場の間の普及の溝を指し事業化と産業化の壁ではない。",
-        "detail": "キャズムは、ハイテク製品がアーリーアダプターからアーリーマジョリティへと普及する際に直面する「大きな溝（断絶）」を指します。マーケティング理論の用語であり、技術開発プロセスの障壁とは文脈が異なります。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
-      },
-      {
-        "text": "死の谷",
-        "overview": "開発と事業化の間の資金や事業化の壁を指す。",
-        "detail": "「死の谷（Valley of Death）」は、開発段階を終えた技術が、実際に事業として立ち上がる（製品化・量産化）までの間に直面する、資金調達や経営上の困難を指します。開発と事業化の間の壁です。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
-      },
-      {
-        "text": "ダーウィンの海",
-        "overview": "事業化後に市場競争を勝ち抜けず淘汰される産業化の壁を指す。",
-        "detail": "「ダーウィンの海（Darwinian Sea）」は、事業化した製品が市場に出た後、競合他社との熾烈な生存競争（自然淘汰）を勝ち抜き、産業として確立されるまでに立ちはだかる障壁を指します。事業化から産業化へ移行する際の壁であり、設問の記述と一致します。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
-      },
-      {
-        "text": "魔の川",
-        "overview": "研究と開発の間にある実用化の壁を指す。",
-        "detail": "「魔の川（Devil River）」は、基礎研究の成果が製品化に向けた応用開発へと結びつく際に直面する障壁を指します。研究と開発の間の壁です。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
-      }
-    ],
-    "correct_indices": [
-      2
-    ],
-    "taxonomy": {
-      "parent": "ストラテジ系",
-      "child": "技術戦略マネジメント",
-      "path": [
-        "ストラテジ系",
-        "技術戦略マネジメント"
-      ]
-    },
-    "source": {
-      "label": "令和6年秋期　問70"
-    }
-  },
-  {
     "id": "ap-tech-security-darknet",
     "question": "インターネット上の使われていないIPアドレス空間に大量に届くパケットはどれか。",
     "choices": [
@@ -4046,6 +4002,50 @@
     },
     "source": {
       "label": "令和6年秋期　問12"
+    }
+  },
+  {
+    "id": "ap-strategy-innovation-darwin-sea",
+    "question": "企業における研究、開発、事業化、そして産業化へとステージが移行する過程の中で、事業化から産業化に移行するときの、競合製品との競争過程にある障壁を何と呼ぶか。",
+    "choices": [
+      {
+        "text": "キャズム",
+        "overview": "初期市場とメイン市場の間の普及の溝を指し事業化と産業化の壁ではない。",
+        "detail": "キャズムは、ハイテク製品がアーリーアダプターからアーリーマジョリティへと普及する際に直面する「大きな溝（断絶）」を指します。マーケティング理論の用語であり、技術開発プロセスの障壁とは文脈が異なります。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
+      },
+      {
+        "text": "死の谷",
+        "overview": "開発と事業化の間の資金や事業化の壁を指す。",
+        "detail": "「死の谷（Valley of Death）」は、開発段階を終えた技術が、実際に事業として立ち上がる（製品化・量産化）までの間に直面する、資金調達や経営上の困難を指します。開発と事業化の間の壁です。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.hwfch439tk6x"
+      },
+      {
+        "text": "ダーウィンの海",
+        "overview": "事業化後に市場競争を勝ち抜けず淘汰される産業化の壁を指す。",
+        "detail": "「ダーウィンの海（Darwinian Sea）」は、事業化した製品が市場に出た後、競合他社との熾烈な生存競争（自然淘汰）を勝ち抜き、産業として確立されるまでに立ちはだかる障壁を指します。事業化から産業化へ移行する際の壁であり、設問の記述と一致します。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
+      },
+      {
+        "text": "魔の川",
+        "overview": "研究と開発の間にある実用化の壁を指す。",
+        "detail": "「魔の川（Devil River）」は、基礎研究の成果が製品化に向けた応用開発へと結びつく際に直面する障壁を指します。研究と開発の間の壁です。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "taxonomy": {
+      "parent": "ストラテジ系",
+      "child": "技術戦略マネジメント",
+      "path": [
+        "ストラテジ系",
+        "技術戦略マネジメント"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問70"
     }
   },
   {
