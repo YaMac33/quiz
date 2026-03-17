@@ -2,64 +2,191 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>一問一答</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>一問一答スマートアプリ</title>
+  <!-- Tailwind CSSの読み込み -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 0 16px;
+    /* スムーズなアニメーション用のカスタムCSS */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    input, button {
-      font-size: 16px;
-      padding: 8px;
-      margin-top: 10px;
-      width: 100%;
+    .fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
     }
-    #result {
-      margin-top: 16px;
-      font-weight: bold;
+    .shake {
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
     }
-    #explanation {
-      margin-top: 10px;
-      color: #555;
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
     }
   </style>
 </head>
-<body>
+<body class="bg-white text-gray-800 font-sans min-h-screen flex flex-col items-center justify-center p-4 sm:p-8">
 
-  <h2 id="question">読み込み中...</h2>
+  <!-- メインカードコンテナ -->
+  <div class="w-full max-w-lg bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 overflow-hidden flex flex-col relative">
+    
+    <!-- ヘッダーエリア -->
+    <div class="px-6 py-4 flex justify-between items-end border-b border-gray-50">
+      <div>
+        <h1 class="text-xl font-extrabold text-gray-800 tracking-tight">一問一答</h1>
+        <p id="progressText" class="text-xs font-medium text-gray-400 mt-1">マスター: 0 / 0 (復習中: 0)</p>
+      </div>
+      <!-- リセットボタン -->
+      <button onclick="resetData()" class="text-gray-300 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50" title="学習データをリセット">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+    </div>
 
-  <input type="text" id="answerInput" placeholder="回答を入力">
-  <button onclick="checkAnswer()">回答</button>
+    <!-- プログレスバー -->
+    <div class="h-1.5 w-full bg-gray-100">
+      <div id="progressBar" class="h-full bg-blue-500 transition-all duration-700 ease-out" style="width: 0%;"></div>
+    </div>
 
-  <div id="result"></div>
-  <div id="explanation"></div>
+    <!-- コンテンツエリア -->
+    <div class="p-6 sm:p-8 flex-grow flex flex-col justify-center min-h-[320px]">
+      
+      <!-- ステータスバッジ（復習モードなど） -->
+      <div class="mb-3 h-6 flex justify-center">
+        <span id="questionStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium opacity-0 transition-opacity duration-300">
+          <!-- バッジ内容 -->
+        </span>
+      </div>
+
+      <!-- 問題文 -->
+      <h2 id="question" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-8 leading-relaxed text-center break-words">
+        データを読み込み中...
+      </h2>
+
+      <!-- 入力・回答フェーズ -->
+      <div id="inputPhase" class="flex flex-col space-y-4 w-full max-w-sm mx-auto">
+        <input type="text" id="answerInput" placeholder="答えを入力してください" 
+               class="w-full px-5 py-4 text-lg bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-center shadow-sm placeholder-gray-400"
+               autocomplete="off">
+        <button id="submitBtn" onclick="checkAnswer()" 
+                class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex justify-center items-center">
+          <span>回答する</span>
+        </button>
+      </div>
+
+      <!-- 結果・解説フェーズ (初期は非表示) -->
+      <div id="resultPhase" class="hidden flex-col space-y-5 w-full fade-in">
+        
+        <!-- 正誤結果表示ボックス -->
+        <div id="resultBox" class="p-5 rounded-xl text-center border-2 flex flex-col items-center justify-center">
+          <!-- 結果がここに入ります -->
+        </div>
+        
+        <!-- 解説ボックス -->
+        <div id="explanationBox" class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+          <div class="flex items-center gap-2 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+            <span class="font-bold text-gray-600 text-sm">解説</span>
+          </div>
+          <p id="explanation" class="text-gray-700 leading-relaxed text-sm sm:text-base"></p>
+        </div>
+
+        <!-- 次へ進むボタン -->
+        <button id="nextBtn" onclick="nextQuestion()" 
+                class="w-full max-w-sm mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all active:scale-[0.98] flex justify-center items-center gap-2">
+          次の問題へ
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="text-gray-400 text-xs mt-6 text-center max-w-sm">
+    💡 2回連続正解で「マスター」！<br>間違えた問題は優先的に出題されます。
+  </p>
 
   <script>
+    // --- データと状態管理 ---
+    const defaultData = [
+      { "id": "1", "question": "日本の首都は？", "answer": ["東京", "とうきょう"], "explanation": "東京都は日本の事実上の首都です。" },
+      { "id": "2", "question": "H2Oは何の化学式？", "answer": ["水", "みず"], "explanation": "水素原子2つと酸素原子1つからなる化合物です。" },
+      { "id": "3", "question": "世界で一番高い山は？", "answer": ["エベレスト", "チョモランマ"], "explanation": "標高は8,848mです。ヒマラヤ山脈にあります。" }
+    ];
+
     let data = [];
     let current = null;
     let lastQuestionId = null;
+    let isAnswering = true; // Enterキーの挙動制御用
 
-    // localStorage
+    // localStorageからの読み込み (元のロジックをそのまま継承)
     let wrong = JSON.parse(localStorage.getItem("wrong") || "[]");
     let correctStreak = JSON.parse(localStorage.getItem("correctStreak") || "{}");
 
-    fetch("data.json")
-      .then(res => res.json())
-      .then(json => {
-        data = json;
-        nextQuestion();
-      });
+    // DOM要素
+    const els = {
+      question: document.getElementById("question"),
+      answerInput: document.getElementById("answerInput"),
+      inputPhase: document.getElementById("inputPhase"),
+      resultPhase: document.getElementById("resultPhase"),
+      resultBox: document.getElementById("resultBox"),
+      explanation: document.getElementById("explanation"),
+      explanationBox: document.getElementById("explanationBox"),
+      nextBtn: document.getElementById("nextBtn"),
+      progressText: document.getElementById("progressText"),
+      progressBar: document.getElementById("progressBar"),
+      questionStatus: document.getElementById("questionStatus")
+    };
 
+    // 初期化
+    async function init() {
+      try {
+        const res = await fetch("data.json");
+        if (!res.ok) throw new Error("Fetch failed");
+        data = await res.json();
+      } catch (e) {
+        console.log("data.jsonが見つからないため、デフォルトデータを使用します。");
+        data = defaultData;
+      }
+      updateProgressUI();
+      nextQuestion();
+    }
+
+    // 進捗バーとテキストの更新
+    function updateProgressUI() {
+      if (!data || data.length === 0) return;
+      
+      // マスターした数 (連続正解2回以上)
+      const masteredCount = data.filter(q => (correctStreak[q.id] || 0) >= 2).length;
+      const total = data.length;
+      
+      els.progressText.textContent = `マスター: ${masteredCount} / ${total} (復習中: ${wrong.length})`;
+      
+      const percent = (masteredCount / total) * 100;
+      els.progressBar.style.width = `${percent}%`;
+
+      if (percent === 100) {
+        els.progressBar.classList.replace("bg-blue-500", "bg-green-500");
+      } else {
+        els.progressBar.classList.replace("bg-green-500", "bg-blue-500");
+      }
+    }
+
+    // 次の問題をセットするロジック (元の仕様を完全継承)
     function nextQuestion() {
+      isAnswering = true;
       let pool;
 
+      // wrong優先ロジック (70%の確率で間違えた問題から)
       if (wrong.length > 0 && Math.random() < 0.7) {
-        // wrong優先
         pool = data.filter(q => wrong.includes(q.id));
       } else {
-        // 全体
         pool = data;
       }
 
@@ -68,51 +195,134 @@
         pool = pool.filter(q => q.id !== lastQuestionId);
       }
 
+      // 万が一poolが空になった場合のフェイルセーフ
+      if (pool.length === 0) pool = data;
+
       current = pool[Math.floor(Math.random() * pool.length)];
       lastQuestionId = current.id;
 
-      document.getElementById("question").textContent = current.question;
-      document.getElementById("answerInput").value = "";
-      document.getElementById("result").textContent = "";
-      document.getElementById("explanation").textContent = "";
+      // UIリセット
+      els.question.textContent = current.question;
+      els.answerInput.value = "";
+      els.answerInput.classList.remove("border-red-500", "ring-red-500");
+      
+      els.inputPhase.classList.remove("hidden");
+      els.resultPhase.classList.add("hidden");
+
+      // バッジ表示制御
+      if (wrong.includes(current.id)) {
+        els.questionStatus.textContent = "復習問題";
+        els.questionStatus.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 opacity-100 transition-opacity duration-300";
+      } else if ((correctStreak[current.id] || 0) >= 2) {
+        els.questionStatus.textContent = "マスター済";
+        els.questionStatus.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 opacity-100 transition-opacity duration-300";
+      } else {
+        els.questionStatus.classList.replace("opacity-100", "opacity-0");
+      }
+
+      setTimeout(() => els.answerInput.focus(), 50);
     }
 
+    // 回答判定ロジック
     function checkAnswer() {
-      const input = document.getElementById("answerInput").value.trim();
-      const correctAnswers = current.answer;
+      if (!isAnswering) return;
 
+      const input = els.answerInput.value.trim();
+      
+      // 未入力の場合は揺らして警告
+      if (input === "") {
+        els.answerInput.classList.add("shake", "border-red-500", "focus:ring-red-500");
+        setTimeout(() => els.answerInput.classList.remove("shake"), 400);
+        return;
+      }
+
+      isAnswering = false;
+      const correctAnswers = current.answer;
       const isCorrect = correctAnswers.includes(input);
 
+      // 元の判定・状態更新ロジック
       if (isCorrect) {
-        document.getElementById("result").textContent = "⭕ 正解";
-
         correctStreak[current.id] = (correctStreak[current.id] || 0) + 1;
-
         if (correctStreak[current.id] >= 2) {
-          // wrongから削除
-          wrong = wrong.filter(id => id !== current.id);
+          wrong = wrong.filter(id => id !== current.id); // wrongから削除
         }
-
       } else {
-        document.getElementById("result").textContent = "❌ 不正解";
-
         correctStreak[current.id] = 0;
-
         if (!wrong.includes(current.id)) {
-          wrong.push(current.id);
+          wrong.push(current.id); // wrongに追加
         }
       }
 
-      document.getElementById("explanation").textContent = current.explanation;
-
-      // 保存
+      // データの保存
       localStorage.setItem("wrong", JSON.stringify(wrong));
       localStorage.setItem("correctStreak", JSON.stringify(correctStreak));
+      updateProgressUI();
 
-      // ワンテンポ遅らせて次へ
-      setTimeout(nextQuestion, 800);
+      // === ここからUIの更新 ===
+      els.inputPhase.classList.add("hidden");
+      
+      // アニメーションのリセットと再適用
+      els.resultPhase.classList.remove("hidden", "fade-in");
+      void els.resultPhase.offsetWidth; 
+      els.resultPhase.classList.add("fade-in");
+
+      if (isCorrect) {
+        const streak = correctStreak[current.id];
+        const msg = streak >= 2 ? "🎉 マスターしました！" : "⭕ 正解！";
+        const subMsg = streak === 1 ? "あと1回連続正解でマスターです" : "完璧です！";
+
+        els.resultBox.className = "p-5 rounded-xl text-center border-2 bg-green-50 border-green-200 text-green-700 w-full";
+        els.resultBox.innerHTML = `
+          <div class="text-2xl font-bold mb-1">${msg}</div>
+          <div class="text-sm font-medium opacity-80">${subMsg}</div>
+        `;
+      } else {
+        els.resultBox.className = "p-5 rounded-xl text-center border-2 bg-red-50 border-red-200 text-red-700 w-full";
+        els.resultBox.innerHTML = `
+          <div class="text-2xl font-bold mb-2">❌ 不正解</div>
+          <div class="text-sm bg-white bg-opacity-50 px-3 py-2 rounded inline-block">
+            正解は <span class="font-bold text-lg underline ml-1">${correctAnswers[0]}</span> です
+          </div>
+        `;
+      }
+
+      // 解説の表示制御
+      if (current.explanation && current.explanation.trim() !== "") {
+        els.explanation.textContent = current.explanation;
+        els.explanationBox.classList.remove("hidden");
+      } else {
+        els.explanationBox.classList.add("hidden");
+      }
+
+      // ボタンにフォーカス（Enterで次へ進めるように）
+      setTimeout(() => els.nextBtn.focus(), 50);
     }
-  </script>
 
+    // データの初期化 (おまけ機能)
+    function resetData() {
+      if(confirm("学習履歴(連続正解数や間違えた問題の記録)をリセットしますか？")) {
+        wrong = [];
+        correctStreak = {};
+        localStorage.removeItem("wrong");
+        localStorage.removeItem("correctStreak");
+        updateProgressUI();
+        nextQuestion();
+      }
+    }
+
+    // キーボード操作のサポート
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        if (isAnswering) {
+          checkAnswer();
+        } else {
+          nextQuestion();
+        }
+      }
+    });
+
+    // アプリ起動
+    init();
+  </script>
 </body>
 </html>
