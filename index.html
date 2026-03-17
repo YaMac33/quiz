@@ -2,312 +2,117 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>一問一答スマートアプリ</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>一問一答</title>
   <style>
-    /* カスタムアニメーション */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 16px;
     }
-    .fade-in {
-      animation: fadeIn 0.3s ease-out forwards;
+    input, button {
+      font-size: 16px;
+      padding: 8px;
+      margin-top: 10px;
+      width: 100%;
     }
-    .shake {
-      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    #result {
+      margin-top: 16px;
+      font-weight: bold;
     }
-    @keyframes shake {
-      10%, 90% { transform: translate3d(-1px, 0, 0); }
-      20%, 80% { transform: translate3d(2px, 0, 0); }
-      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-      40%, 60% { transform: translate3d(4px, 0, 0); }
+    #explanation {
+      margin-top: 10px;
+      color: #555;
     }
   </style>
 </head>
-<body class="bg-white text-gray-800 font-sans min-h-screen flex flex-col items-center justify-center p-4">
+<body>
 
-  <!-- メインコンテナ -->
-  <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col">
-    
-    <!-- ヘッダー / 進捗エリア -->
-    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-      <div>
-        <h1 class="text-xl font-bold text-gray-700">一問一答</h1>
-        <p id="progressText" class="text-sm text-gray-500 mt-1">進捗: 0 / 0 マスター</p>
-      </div>
-      <button onclick="resetState()" class="text-sm text-gray-400 hover:text-red-500 transition-colors" title="学習履歴をリセット">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-      </button>
-    </div>
-    <!-- プログレスバー -->
-    <div class="h-1 w-full bg-gray-200">
-      <div id="progressBar" class="h-1 bg-blue-500 transition-all duration-500" style="width: 0%;"></div>
-    </div>
+  <h2 id="question">読み込み中...</h2>
 
-    <!-- 問題表示エリア -->
-    <div class="p-6 md:p-8 flex-grow flex flex-col justify-center min-h-[300px]">
-      
-      <!-- ステータスバッジ（復習モードなど） -->
-      <div class="mb-4 h-6">
-        <span id="questionStatus" class="inline-block px-2 py-1 text-xs font-semibold rounded-full hidden"></span>
-      </div>
+  <input type="text" id="answerInput" placeholder="回答を入力">
+  <button onclick="checkAnswer()">回答</button>
 
-      <h2 id="question" class="text-2xl md:text-3xl font-bold text-gray-800 mb-8 leading-tight text-center">
-        読み込み中...
-      </h2>
+  <div id="result"></div>
+  <div id="explanation"></div>
 
-      <!-- 入力・回答エリア -->
-      <div id="inputArea" class="flex flex-col space-y-4">
-        <div class="relative">
-          <input type="text" id="answerInput" placeholder="答えを入力してください" 
-                 class="w-full px-4 py-3 text-lg border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
-                 autocomplete="off">
-        </div>
-        <button id="submitBtn" onclick="submitAnswer()" 
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98]">
-          回答する
-        </button>
-      </div>
+  <script>
+    let data = [];
+    let current = null;
+    let lastQuestionId = null;
 
-      <!-- 結果・解説エリア (初期は非表示) -->
-      <div id="resultArea" class="hidden flex-col space-y-4 mt-4 fade-in">
-        <div id="resultBox" class="p-4 rounded-xl text-center font-bold text-lg border-2">
-          <!-- 結果テキストがここに入ります -->
-        </div>
-        
-        <div id="explanationBox" class="bg-gray-50 p-4 rounded-xl text-gray-600 text-sm border border-gray-100 shadow-inner">
-          <p class="font-semibold text-gray-500 mb-1">解説:</p>
-          <p id="explanationText" class="leading-relaxed"></p>
-        </div>
+    // localStorage
+    let wrong = JSON.parse(localStorage.getItem("wrong") || "[]");
+    let correctStreak = JSON.parse(localStorage.getItem("correctStreak") || "{}");
 
-        <button id="nextBtn" onclick="nextQuestion()" 
-                class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all active:scale-[0.98] mt-4 flex justify-center items-center gap-2">
-          次の問題へ
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-        </button>
-      </div>
+    fetch("data.json")
+      .then(res => res.json())
+      .then(json => {
+        data = json;
+        nextQuestion();
+      });
 
-    </div>
-  </div>
+    function nextQuestion() {
+      let pool;
 
-  <!-- フッター -->
-  <p class="text-gray-400 text-xs mt-6 text-center">
-    2回連続正解で「マスター」になります。間違えた問題は優先的に出題されます。
-  </p>
+      if (wrong.length > 0 && Math.random() < 0.7) {
+        // wrong優先
+        pool = data.filter(q => wrong.includes(q.id));
+      } else {
+        // 全体
+        pool = data;
+      }
 
-<script>
-// デフォルトデータ（data.jsonがない場合のフォールバック）
-const fallbackData = [
-  { id: "1", question: "日本の首都は？", answer: ["東京", "とうきょう"], explanation: "東京都は日本の事実上の首都です。" },
-  { id: "2", question: "リンゴを英語で言うと？", answer: ["apple", "Apple", "APPLE"], explanation: "スペルは a-p-p-l-e です。" },
-  { id: "3", question: "1 + 1 = ?", answer: ["2", "２"], explanation: "算数の基本中の基本ですね。" },
-  { id: "4", question: "水兵リーベ僕の船... の「水」が表す元素は？", answer: ["水素", "すいそ", "H", "h"], explanation: "原子番号1番の元素。宇宙で最も豊富に存在します。" },
-  { id: "5", question: "地球から一番近い恒星（太陽を除く）は？", answer: ["プロキシマ・ケンタウリ", "プロキシマケンタウリ"], explanation: "ケンタウルス座の方向、約4.24光年の距離にあります。" }
-];
+      // 直前問題を除外
+      if (pool.length > 1) {
+        pool = pool.filter(q => q.id !== lastQuestionId);
+      }
 
-let data = [];
-let current = null;
-let state = JSON.parse(localStorage.getItem("learning_state") || "{}");
-let isAnswering = true; // 現在回答入力モードか、結果表示モードか
+      current = pool[Math.floor(Math.random() * pool.length)];
+      lastQuestionId = current.id;
 
-// DOM要素のキャッシュ
-const elements = {
-  question: document.getElementById("question"),
-  answerInput: document.getElementById("answerInput"),
-  submitBtn: document.getElementById("submitBtn"),
-  inputArea: document.getElementById("inputArea"),
-  resultArea: document.getElementById("resultArea"),
-  resultBox: document.getElementById("resultBox"),
-  explanationText: document.getElementById("explanationText"),
-  explanationBox: document.getElementById("explanationBox"),
-  nextBtn: document.getElementById("nextBtn"),
-  progressText: document.getElementById("progressText"),
-  progressBar: document.getElementById("progressBar"),
-  questionStatus: document.getElementById("questionStatus")
-};
-
-async function loadData() {
-  try {
-    const res = await fetch("data.json");
-    if (!res.ok) throw new Error("Network response was not ok");
-    data = await res.json();
-  } catch (error) {
-    console.warn("data.json の読み込みに失敗しました。デフォルトデータを使用します。", error);
-    data = fallbackData;
-  }
-  updateProgress();
-  nextQuestion();
-}
-
-function pickQuestion() {
-  // wrong優先 (元のロジックを保持)
-  const wrong = data.filter(q => state[q.id]?.status === "wrong");
-  
-  // 間違えた問題がなければ、まだマスターしていない問題（status != 'correct'）から選ぶ
-  // それもなければ全てから選ぶ
-  let pool = wrong.length ? wrong : data.filter(q => state[q.id]?.status !== "correct");
-  
-  if (pool.length === 0) {
-    pool = data; // 全てマスター済みの場合は全体からランダム
-  }
-  
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function updateProgress() {
-  if (data.length === 0) return;
-  
-  const masteredCount = data.filter(q => state[q.id]?.status === "correct").length;
-  const wrongCount = data.filter(q => state[q.id]?.status === "wrong").length;
-  const total = data.length;
-  
-  elements.progressText.textContent = `マスター: ${masteredCount} / ${total} (復習中: ${wrongCount})`;
-  
-  const percentage = (masteredCount / total) * 100;
-  elements.progressBar.style.width = `${percentage}%`;
-  
-  // 100%達成時
-  if (percentage === 100) {
-    elements.progressBar.classList.replace("bg-blue-500", "bg-green-500");
-  } else {
-    elements.progressBar.classList.replace("bg-green-500", "bg-blue-500");
-  }
-}
-
-function nextQuestion() {
-  isAnswering = true;
-  current = pickQuestion();
-  
-  // UIリセット
-  elements.question.textContent = current.question;
-  elements.answerInput.value = "";
-  elements.answerInput.classList.remove("border-red-500");
-  
-  elements.inputArea.classList.remove("hidden");
-  elements.resultArea.classList.add("hidden");
-  
-  // ステータスバッジの表示
-  const currentStatus = state[current.id]?.status;
-  if (currentStatus === "wrong") {
-    elements.questionStatus.textContent = "復習問題";
-    elements.questionStatus.className = "inline-block px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700";
-    elements.questionStatus.classList.remove("hidden");
-  } else if (currentStatus === "correct") {
-    elements.questionStatus.textContent = "マスター済";
-    elements.questionStatus.className = "inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700";
-    elements.questionStatus.classList.remove("hidden");
-  } else {
-    elements.questionStatus.classList.add("hidden");
-  }
-
-  // 少し遅延させてフォーカス（モバイルキーボード等の問題回避）
-  setTimeout(() => elements.answerInput.focus(), 50);
-}
-
-function submitAnswer() {
-  if (!isAnswering) return;
-  
-  const input = elements.answerInput.value.trim();
-  if (input === "") {
-    elements.answerInput.classList.add("shake", "border-red-500");
-    setTimeout(() => elements.answerInput.classList.remove("shake"), 400);
-    return;
-  }
-
-  isAnswering = false;
-
-  // ワンテンポ遅延（元のロジックを保持しつつUIの切り替えをスムーズに）
-  elements.submitBtn.textContent = "判定中...";
-  elements.submitBtn.classList.add("opacity-70");
-  
-  setTimeout(() => {
-    elements.submitBtn.textContent = "回答する";
-    elements.submitBtn.classList.remove("opacity-70");
-    
-    // 大文字小文字、全角半角の揺れをある程度吸収する場合はここで正規化すると良いですが、
-    // 今回は元の strict な includes ロジックを継承します。
-    const correct = current.answer.includes(input);
-
-    if (!state[current.id]) {
-      state[current.id] = { status: "new", streak: 0 };
+      document.getElementById("question").textContent = current.question;
+      document.getElementById("answerInput").value = "";
+      document.getElementById("result").textContent = "";
+      document.getElementById("explanation").textContent = "";
     }
 
-    // UI切り替え
-    elements.inputArea.classList.add("hidden");
-    elements.resultArea.classList.remove("hidden");
-    elements.resultArea.classList.remove("fade-in");
-    void elements.resultArea.offsetWidth; // リフロー強制でアニメーション再トリガー
-    elements.resultArea.classList.add("fade-in");
+    function checkAnswer() {
+      const input = document.getElementById("answerInput").value.trim();
+      const correctAnswers = current.answer;
 
-    if (correct) {
-      state[current.id].streak += 1;
-      let msg = "⭕ 正解！";
+      const isCorrect = correctAnswers.includes(input);
 
-      if (state[current.id].streak >= 2) {
-        state[current.id].status = "correct";
-        msg = "🎉 正解！（マスターしました）";
+      if (isCorrect) {
+        document.getElementById("result").textContent = "⭕ 正解";
+
+        correctStreak[current.id] = (correctStreak[current.id] || 0) + 1;
+
+        if (correctStreak[current.id] >= 2) {
+          // wrongから削除
+          wrong = wrong.filter(id => id !== current.id);
+        }
+
       } else {
-        // まだマスターしてない場合は状態を更新
-        if(state[current.id].status === "wrong") {
-           state[current.id].status = "new"; // wrong解除
+        document.getElementById("result").textContent = "❌ 不正解";
+
+        correctStreak[current.id] = 0;
+
+        if (!wrong.includes(current.id)) {
+          wrong.push(current.id);
         }
       }
 
-      elements.resultBox.textContent = msg;
-      elements.resultBox.className = "p-4 rounded-xl text-center font-bold text-xl border-2 bg-green-50 border-green-200 text-green-700";
-    } else {
-      state[current.id].status = "wrong";
-      state[current.id].streak = 0;
+      document.getElementById("explanation").textContent = current.explanation;
 
-      elements.resultBox.innerHTML = `❌ 不正解<br><span class="text-sm font-normal mt-1 block">正解: <span class="font-bold underline">${current.answer[0]}</span></span>`;
-      elements.resultBox.className = "p-4 rounded-xl text-center font-bold text-xl border-2 bg-red-50 border-red-200 text-red-700";
+      // 保存
+      localStorage.setItem("wrong", JSON.stringify(wrong));
+      localStorage.setItem("correctStreak", JSON.stringify(correctStreak));
+
+      // ワンテンポ遅らせて次へ
+      setTimeout(nextQuestion, 800);
     }
-
-    // 解説の表示
-    if (current.explanation) {
-      elements.explanationText.textContent = current.explanation;
-      elements.explanationBox.classList.remove("hidden");
-    } else {
-      elements.explanationBox.classList.add("hidden");
-    }
-
-    localStorage.setItem("learning_state", JSON.stringify(state));
-    updateProgress();
-    
-    // 次へボタンにフォーカス
-    setTimeout(() => elements.nextBtn.focus(), 50);
-
-  }, 300);
-}
-
-function resetState() {
-  if (confirm("学習履歴（マスター状態や復習キュー）を全てリセットしますか？")) {
-    state = {};
-    localStorage.removeItem("learning_state");
-    updateProgress();
-    nextQuestion();
-  }
-}
-
-// エンターキーでの操作サポート
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    if (isAnswering) {
-      submitAnswer();
-    } else {
-      nextQuestion();
-    }
-  }
-});
-
-// 初期化実行
-loadData();
-</script>
+  </script>
 
 </body>
 </html>
