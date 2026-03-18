@@ -7,7 +7,8 @@
       "アムダールの法則"
     ],
     "explanation": "全体の高速化は並列化できない部分に制約される",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/1Gke-CicOK7zPdXQekbuUp6pSaKSg1MIIrG2Ye-GpVto/edit?usp=drivesdk"
   },
   {
     "id": "ansoff-matrix-01",
