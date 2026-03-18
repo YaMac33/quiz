@@ -79,6 +79,15 @@
     "published": true
   },
   {
+    "id": "soc-01",
+    "question": "複数機能を1チップに集積 → ？",
+    "answer": [
+      "SoC"
+    ],
+    "explanation": "System on Chipの略で複数機能を統合したIC",
+    "published": true
+  },
+  {
     "id": "tcpip-app-osi-01",
     "question": "TCP/IPのアプリ層 → OSI参照モデルで対応は？",
     "answer": [
