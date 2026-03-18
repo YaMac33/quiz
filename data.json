@@ -37,7 +37,8 @@
       "電子署名"
     ],
     "explanation": "送信者の真正性と改ざん検知を保証する仕組み",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/1A7fan5xHBvR1edIoV0rPvAm1Xd4zjn1NKJtCmknLNhE/edit?usp=drivesdk"
   },
   {
     "id": "functional-requirement-01",
