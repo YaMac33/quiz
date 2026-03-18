@@ -87,7 +87,8 @@
       "エラー通知を行う"
     ],
     "explanation": "IP通信のエラーや制御メッセージを送るプロトコル",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/16wC6i6K9DT0sJ_xF2eBahbg1RgYmsxqLJMIbVltgJHY/edit?usp=drivesdk"
   },
   {
     "id": "twos-complement-01",
