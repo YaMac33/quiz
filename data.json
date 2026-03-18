@@ -75,7 +75,8 @@
       "アプリ・プレゼン・セッション"
     ],
     "explanation": "TCP/IPのアプリ層はOSIの上位3層（アプリ・プレゼン・セッション）を含む。",
-    "published": true
+    "published": true,
+    "link": "https://www.itmanage.co.jp/column/osi-reference-model/"
   },
   {
     "id": "test-network-icmp",
