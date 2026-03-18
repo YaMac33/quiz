@@ -251,409 +251,422 @@
   </div>
 
   <script>
-    const DATA_URL = "data.json";
-    const PROGRESS_KEY = "qa_progress_v2";
-    const RATES_KEY = "qa_rates_v1";
+  const DATA_URL = "data.json";
+  const PROGRESS_KEY = "qa_progress_v2";
+  const RATES_KEY = "qa_rates_v1";
 
-    let questions = [];
-    let currentQuestion = null;
-    let lastQuestionId = null;
-    let isAnswered = false; // Enterキー等の制御用フラグ
+  let questions = [];
+  let currentQuestion = null;
+  let lastQuestionId = null;
+  let isAnswered = false;
 
-    let progress = loadProgress();
-    let rates = loadRates();
+  let progress = loadProgress();
+  let rates = loadRates();
 
-    const $ = (id) => document.getElementById(id);
+  const $ = (id) => document.getElementById(id);
 
-    // --- データ保存系 ---
-    function loadProgress() {
-      try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}"); } 
-      catch { return {}; }
+  function loadProgress() {
+    try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}"); }
+    catch { return {}; }
+  }
+
+  function saveProgress() {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  }
+
+  function loadRates() {
+    try {
+      return { unanswered: 40, wrong: 50, mastered: 10, ...JSON.parse(localStorage.getItem(RATES_KEY) || "{}") };
+    } catch {
+      return { unanswered: 40, wrong: 50, mastered: 10 };
     }
-    function saveProgress() {
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  }
+
+  function saveRates() {
+    localStorage.setItem(RATES_KEY, JSON.stringify(rates));
+  }
+
+  function getQuestionState(id) {
+    const p = progress[id];
+    if (!p) return "unanswered";
+    if (p.status === "wrong") return "wrong";
+    if (p.status === "mastered") return "mastered";
+    return "unanswered";
+  }
+
+  function getStatusBadgeHTML(state) {
+    if (state === "wrong") return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">不正解</span>`;
+    if (state === "mastered") return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">マスター</span>`;
+    return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">未回答</span>`;
+  }
+
+  function classifyQuestions() {
+    return {
+      unanswered: questions.filter(q => getQuestionState(q.id) === "unanswered"),
+      wrong: questions.filter(q => getQuestionState(q.id) === "wrong"),
+      mastered: questions.filter(q => getQuestionState(q.id) === "mastered")
+    };
+  }
+
+  function updateStats() {
+    const groups = classifyQuestions();
+    $("statUnanswered").textContent = groups.unanswered.length;
+    $("statWrong").textContent = groups.wrong.length;
+    $("statMastered").textContent = groups.mastered.length;
+  }
+
+  function weightedPickGroup(groups) {
+    const available = [];
+    if (groups.unanswered.length > 0 && rates.unanswered > 0) available.push({ key: "unanswered", weight: Number(rates.unanswered) });
+    if (groups.wrong.length > 0 && rates.wrong > 0) available.push({ key: "wrong", weight: Number(rates.wrong) });
+    if (groups.mastered.length > 0 && rates.mastered > 0) available.push({ key: "mastered", weight: Number(rates.mastered) });
+
+    if (available.length === 0) return questions.length === 0 ? null : "all";
+
+    const total = available.reduce((sum, item) => sum + item.weight, 0);
+    let r = Math.random() * total;
+
+    for (const item of available) {
+      r -= item.weight;
+      if (r <= 0) return item.key;
     }
-    function loadRates() {
-      try {
-        return { unanswered: 40, wrong: 50, mastered: 10, ...JSON.parse(localStorage.getItem(RATES_KEY) || "{}") };
-      } catch {
-        return { unanswered: 40, wrong: 50, mastered: 10 };
+    return available[available.length - 1].key;
+  }
+
+  function pickRandomQuestion() {
+    if (questions.length === 0) return null;
+
+    const groups = classifyQuestions();
+    const selectedGroup = weightedPickGroup(groups);
+
+    let pool;
+    if (selectedGroup === "unanswered") pool = groups.unanswered;
+    else if (selectedGroup === "wrong") pool = groups.wrong;
+    else if (selectedGroup === "mastered") pool = groups.mastered;
+    else pool = questions;
+
+    if (!pool || pool.length === 0) pool = questions;
+
+    if (pool.length > 1 && lastQuestionId) {
+      const withoutLast = pool.filter(q => q.id !== lastQuestionId);
+      if (withoutLast.length > 0) pool = withoutLast;
+    }
+
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function renderQuestion() {
+    isAnswered = false;
+
+    $("resultArea").classList.add("hidden");
+    $("resultArea").classList.remove("fade-in");
+    $("resultBox").classList.add("hidden");
+    $("explanationContainer").classList.add("hidden");
+    $("nextBtn").classList.add("hidden");
+
+    $("controlsUnanswered").classList.remove("hidden");
+    $("answerInput").value = "";
+    $("answerInput").classList.remove("border-red-500", "ring-red-500");
+    $("answerInput").disabled = false;
+
+    if (!currentQuestion) {
+      $("question").textContent = "出題できる問題がありません。";
+      $("idPill").textContent = "ID: -";
+      $("statusPill").outerHTML = `<span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">-</span>`;
+      return;
+    }
+
+    const state = getQuestionState(currentQuestion.id);
+    $("question").textContent = currentQuestion.question;
+    $("idPill").textContent = "ID: " + currentQuestion.id;
+    $("statusPill").outerHTML = getStatusBadgeHTML(state).replace('px-2.5 py-0.5', 'px-3 py-1 text-sm');
+    $("statusPill").id = "statusPill";
+
+    setTimeout(() => $("answerInput").focus(), 50);
+  }
+
+  function submitAnswer() {
+    if (!currentQuestion || isAnswered) return;
+
+    const input = $("answerInput").value.trim();
+    if (!input) {
+      $("answerInput").classList.add("shake", "border-red-500", "focus:ring-red-500");
+      setTimeout(() => $("answerInput").classList.remove("shake"), 400);
+      return;
+    }
+
+    isAnswered = true;
+    $("answerInput").disabled = true;
+
+    const answers = Array.isArray(currentQuestion.answer) ? currentQuestion.answer : [];
+    const isCorrect = answers.includes(input);
+
+    if (!progress[currentQuestion.id]) {
+      progress[currentQuestion.id] = { status: "unanswered", correctStreak: 0 };
+    }
+
+    const p = progress[currentQuestion.id];
+
+    $("controlsUnanswered").classList.add("hidden");
+    $("resultArea").classList.remove("hidden");
+    $("resultBox").classList.remove("hidden");
+    $("nextBtn").classList.remove("hidden");
+
+    void $("resultArea").offsetWidth;
+    $("resultArea").classList.add("fade-in");
+
+    if (isCorrect) {
+      p.correctStreak = (p.correctStreak || 0) + 1;
+      if (p.correctStreak >= 2) p.status = "mastered";
+      else if (p.status !== "wrong") p.status = "mastered";
+
+      const msg = p.status === "mastered" ? "🎉 マスターしました！" : "⭕ 正解！";
+      $("resultBox").className = "p-5 rounded-xl text-center border-2 bg-green-50 border-green-200 text-green-700 w-full";
+      $("resultBox").innerHTML = `<div class="text-2xl font-bold">${msg}</div>`;
+    } else {
+      p.status = "wrong";
+      p.correctStreak = 0;
+
+      const firstAnswer = answers[0] || "";
+      $("resultBox").className = "p-5 rounded-xl text-center border-2 bg-red-50 border-red-200 text-red-700 w-full";
+      $("resultBox").innerHTML = `
+        <div class="text-2xl font-bold mb-2">❌ 不正解</div>
+        <div class="text-sm bg-white bg-opacity-60 px-4 py-2 rounded-lg inline-block">
+          正解: <span class="font-bold text-lg underline ml-1">${escapeHtml(firstAnswer)}</span>
+        </div>`;
+    }
+
+    if (currentQuestion.explanation || currentQuestion.link) {
+      $("explanationTitle").textContent = "解説";
+      let html = `<div>${escapeHtml(currentQuestion.explanation || "")}</div>`;
+      if (currentQuestion.link) {
+        html += `<div class="mt-2"><a href="${escapeAttribute(currentQuestion.link)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-medium flex items-center gap-1">参考リンク</a></div>`;
       }
-    }
-    function saveRates() {
-      localStorage.setItem(RATES_KEY, JSON.stringify(rates));
-    }
-
-    // --- 状態判定系 ---
-    function getQuestionState(id) {
-      const p = progress[id];
-      if (!p) return "unanswered";
-      if (p.status === "wrong") return "wrong";
-      if (p.status === "mastered") return "mastered";
-      return "unanswered";
-    }
-
-    function getStatusBadgeHTML(state) {
-      if (state === "wrong") return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">不正解</span>`;
-      if (state === "mastered") return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">マスター</span>`;
-      return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">未回答</span>`;
-    }
-
-    function classifyQuestions() {
-      return {
-        unanswered: questions.filter(q => getQuestionState(q.id) === "unanswered"),
-        wrong: questions.filter(q => getQuestionState(q.id) === "wrong"),
-        mastered: questions.filter(q => getQuestionState(q.id) === "mastered")
-      };
-    }
-
-    // --- UI更新系 ---
-    function updateStats() {
-      const groups = classifyQuestions();
-      $("statUnanswered").textContent = groups.unanswered.length;
-      $("statWrong").textContent = groups.wrong.length;
-      $("statMastered").textContent = groups.mastered.length;
-    }
-
-    // --- 抽選ロジック ---
-    function weightedPickGroup(groups) {
-      const available = [];
-      if (groups.unanswered.length > 0 && rates.unanswered > 0) available.push({ key: "unanswered", weight: Number(rates.unanswered) });
-      if (groups.wrong.length > 0 && rates.wrong > 0) available.push({ key: "wrong", weight: Number(rates.wrong) });
-      if (groups.mastered.length > 0 && rates.mastered > 0) available.push({ key: "mastered", weight: Number(rates.mastered) });
-
-      if (available.length === 0) return questions.length === 0 ? null : "all";
-
-      const total = available.reduce((sum, item) => sum + item.weight, 0);
-      let r = Math.random() * total;
-
-      for (const item of available) {
-        r -= item.weight;
-        if (r <= 0) return item.key;
-      }
-      return available[available.length - 1].key;
-    }
-
-    function pickRandomQuestion() {
-      if (questions.length === 0) return null;
-      const groups = classifyQuestions();
-      const selectedGroup = weightedPickGroup(groups);
-
-      let pool;
-      if (selectedGroup === "unanswered") pool = groups.unanswered;
-      else if (selectedGroup === "wrong") pool = groups.wrong;
-      else if (selectedGroup === "mastered") pool = groups.mastered;
-      else pool = questions;
-
-      if (!pool || pool.length === 0) pool = questions;
-
-      if (pool.length > 1 && lastQuestionId) {
-        const withoutLast = pool.filter(q => q.id !== lastQuestionId);
-        if (withoutLast.length > 0) pool = withoutLast;
-      }
-      return pool[Math.floor(Math.random() * pool.length)];
-    }
-
-    // --- 問題の表示 ---
-    function renderQuestion() {
-      isAnswered = false;
-      
-      // UIリセット
-      $("resultArea").classList.add("hidden");
-      $("resultArea").classList.remove("fade-in");
-      $("resultBox").classList.add("hidden");
+      $("explanation").innerHTML = html;
+      $("explanationContainer").classList.remove("hidden");
+    } else {
       $("explanationContainer").classList.add("hidden");
-      $("nextBtn").classList.add("hidden");
-      
-      $("controlsUnanswered").classList.remove("hidden");
-      $("answerInput").value = "";
-      $("answerInput").classList.remove("border-red-500", "ring-red-500");
-      $("answerInput").disabled = false;
-
-      if (!currentQuestion) {
-        $("question").textContent = "出題できる問題がありません。";
-        $("idPill").textContent = "ID: -";
-        $("statusPill").outerHTML = `<span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">-</span>`;
-        return;
-      }
-
-      const state = getQuestionState(currentQuestion.id);
-      $("question").textContent = currentQuestion.question;
-      $("idPill").textContent = "ID: " + currentQuestion.id;
-      $("statusPill").outerHTML = getStatusBadgeHTML(state).replace('px-2.5 py-0.5', 'px-3 py-1 text-sm');
-      $("statusPill").id = "statusPill"; // IDを再付与
-
-      setTimeout(() => $("answerInput").focus(), 50);
     }
 
-    // --- 回答の処理 ---
-    function submitAnswer() {
-      if (!currentQuestion || isAnswered) return;
+    progress[currentQuestion.id] = p;
+    saveProgress();
+    updateStats();
+    renderList();
 
-      const input = $("answerInput").value.trim();
-      if (!input) {
-        $("answerInput").classList.add("shake", "border-red-500", "focus:ring-red-500");
-        setTimeout(() => $("answerInput").classList.remove("shake"), 400);
-        return;
-      }
+    setTimeout(() => $("nextBtn").focus(), 50);
+  }
 
-      isAnswered = true;
-      $("answerInput").disabled = true; // 二重送信防止
-      const answers = Array.isArray(currentQuestion.answer) ? currentQuestion.answer : [];
-      const isCorrect = answers.includes(input);
+  function nextQuestion() {
+    currentQuestion = pickRandomQuestion();
+    if (!currentQuestion) return;
+    lastQuestionId = currentQuestion.id;
+    renderQuestion();
+    updateStats();
+  }
 
-      if (!progress[currentQuestion.id]) {
-        progress[currentQuestion.id] = { status: "unanswered", correctStreak: 0 };
-      }
-      const p = progress[currentQuestion.id];
+  function renderList() {
+    const body = $("listBody");
+    const search = $("listSearch").value.trim().toLowerCase();
+    const filter = $("listFilter").value;
 
-      // UI切り替え
-      $("controlsUnanswered").classList.add("hidden");
-      $("resultArea").classList.remove("hidden");
-      $("resultBox").classList.remove("hidden");
-      $("nextBtn").classList.remove("hidden");
-      
-      void $("resultArea").offsetWidth; // リフロー強制
-      $("resultArea").classList.add("fade-in");
+    body.innerHTML = "";
 
-      // 判定ロジック
-      if (isCorrect) {
-        p.correctStreak = (p.correctStreak || 0) + 1;
-        if (p.correctStreak >= 2) p.status = "mastered";
-        else if (p.status !== "wrong") p.status = "mastered";
+    const filtered = questions.filter(q => {
+      const state = getQuestionState(q.id);
+      if (filter !== "all" && state !== filter) return false;
+      if (!search) return true;
 
-        const msg = p.status === "mastered" ? "🎉 マスターしました！" : "⭕ 正解！";
-        $("resultBox").className = "p-5 rounded-xl text-center border-2 bg-green-50 border-green-200 text-green-700 w-full";
-        $("resultBox").innerHTML = `<div class="text-2xl font-bold">${msg}</div>`;
-      } else {
-        p.status = "wrong";
-        p.correctStreak = 0;
-
-        const firstAnswer = answers[0] || "";
-        $("resultBox").className = "p-5 rounded-xl text-center border-2 bg-red-50 border-red-200 text-red-700 w-full";
-        $("resultBox").innerHTML = `
-          <div class="text-2xl font-bold mb-2">❌ 不正解</div>
-          <div class="text-sm bg-white bg-opacity-60 px-4 py-2 rounded-lg inline-block">
-            正解: <span class="font-bold text-lg underline ml-1">${escapeHtml(firstAnswer)}</span>
-          </div>`;
-      }
-
-      // 解説の表示
-      if (currentQuestion.explanation || currentQuestion.link) {
-        $("explanationTitle").textContent = "解説";
-        let html = `<div>${escapeHtml(currentQuestion.explanation || "")}</div>`;
-        if (currentQuestion.link) {
-          html += `<div class="mt-2"><a href="${escapeAttribute(currentQuestion.link)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-medium flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>参考リンク</a></div>`;
-        }
-        $("explanation").innerHTML = html;
-        $("explanationContainer").classList.remove("hidden");
-      } else {
-        $("explanationContainer").classList.add("hidden");
-      }
-
-      // 保存と更新
-      progress[currentQuestion.id] = p;
-      saveProgress();
-      updateStats();
-      renderList();
-
-      setTimeout(() => $("nextBtn").focus(), 50);
-    }
-
-    function nextQuestion() {
-      currentQuestion = pickRandomQuestion();
-      if (!currentQuestion) return;
-      lastQuestionId = currentQuestion.id;
-      renderQuestion();
-      updateStats();
-    }
-
-    // --- 一覧タブ系 ---
-    function renderList() {
-      const body = $("listBody");
-      const search = $("listSearch").value.trim().toLowerCase();
-      const filter = $("listFilter").value;
-
-      body.innerHTML = "";
-
-      const filtered = questions.filter(q => {
-        const state = getQuestionState(q.id);
-        if (filter !== "all" && state !== filter) return false;
-        if (!search) return true;
-
-        const haystack = [q.id, q.question, (Array.isArray(q.answer) ? q.answer.join(" ") : ""), q.explanation || ""].join(" ").toLowerCase();
-        return haystack.includes(search);
-      });
-
-      if (filtered.length === 0) {
-        body.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">該当する問題が見つかりません</td></tr>`;
-        return;
-      }
-
-      for (const q of filtered) {
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-gray-50 transition-colors";
-        const state = getQuestionState(q.id);
-        const answers = Array.isArray(q.answer) ? q.answer.join(" / ") : "";
-        const linkHtml = q.link ? `<a href="${escapeAttribute(q.link)}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-1" title="参考リンク">🔗</a>` : "";
-
-        tr.innerHTML = `
-          <td class="px-4 py-3 whitespace-nowrap">${getStatusBadgeHTML(state)}</td>
-          <td class="px-4 py-3 text-gray-500 font-mono text-xs">${escapeHtml(q.id)}</td>
-          <td class="px-4 py-3 font-medium text-gray-800">${escapeHtml(q.question)}</td>
-          <td class="px-4 py-3 text-gray-600 hidden md:table-cell">${escapeHtml(answers)}</td>
-          <td class="px-4 py-3 text-gray-500 text-sm hidden lg:table-cell max-w-xs truncate" title="${escapeHtml(q.explanation)}">${escapeHtml(q.explanation || "")}${linkHtml}</td>
-          <td class="px-4 py-3 text-center whitespace-nowrap">
-            <button class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm" data-id="${escapeAttribute(q.id)}">開く</button>
-          </td>
-        `;
-
-        tr.querySelector("button").addEventListener("click", () => {
-          currentQuestion = q;
-          lastQuestionId = q.id;
-          showTab("quiz");
-          renderQuestion();
-        });
-        body.appendChild(tr);
-      }
-    }
-
-    // --- タブ＆設定系 ---
-    function showTab(tab) {
-      $("viewQuiz").classList.toggle("hidden", tab !== "quiz");
-      $("viewList").classList.toggle("hidden", tab !== "list");
-      $("viewSettings").classList.toggle("hidden", tab !== "settings");
-
-      const tabs = { quiz: $("tabQuiz"), list: $("tabList"), settings: $("tabSettings") };
-      for (const key in tabs) {
-        if (key === tab) {
-          tabs[key].className = "px-4 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none whitespace-nowrap transition-colors";
-        } else {
-          tabs[key].className = "px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 focus:outline-none whitespace-nowrap transition-colors";
-        }
-      }
-
-      if (tab === "list") renderList();
-      if (tab === "settings") renderRates();
-    }
-
-    function renderRates() {
-      $("rateUnanswered").value = rates.unanswered;
-      $("rateWrong").value = rates.wrong;
-      $("rateMastered").value = rates.mastered;
-    }
-
-    function saveRateSettings() {
-      rates.unanswered = Math.max(0, Number($("rateUnanswered").value) || 0);
-      rates.wrong = Math.max(0, Number($("rateWrong").value) || 0);
-      rates.mastered = Math.max(0, Number($("rateMastered").value) || 0);
-      saveRates();
-      
-      const btn = $("saveRatesBtn");
-      const originalText = btn.textContent;
-      btn.textContent = "✅ 保存しました";
-      btn.classList.replace("bg-gray-900", "bg-green-600");
-      setTimeout(() => {
-        btn.textContent = originalText;
-        btn.classList.replace("bg-green-600", "bg-gray-900");
-      }, 2000);
-    }
-
-    function resetProgress() {
-      if (!confirm("学習履歴をリセットします。本当によろしいですか？")) return;
-      progress = {};
-      saveProgress();
-      updateStats();
-      renderList();
-      if (currentQuestion) renderQuestion();
-      alert("リセットが完了しました。");
-    }
-
-    // --- ユーティリティ ---
-    function escapeHtml(str) {
-      return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
-    }
-    function escapeAttribute(str) { return escapeHtml(str); }
-
-    function setQuestionsData(json) {
-      questions = json.map(item => ({
-        id: String(item.id || "").trim(),
-        question: String(item.question || "").trim(),
-        answer: Array.isArray(item.answer) ? item.answer.map(v => String(v)) : [],
-        explanation: String(item.explanation || "").trim(),
-        link: item.link ? String(item.link).trim() : ""
-      })).filter(q => q.id && q.question && q.answer.length > 0);
-
-      updateStats();
-      renderList();
-      nextQuestion();
-    }
-
-    // --- ★ 初期化 (外部データ読み込み) ★ ---
-    async function loadData() {
-      try {
-        // 同じ階層の data.json を読み込む
-        const res = await fetch(DATA_URL, { cache: "no-cache" });
-        if (!res.ok) throw new Error(`HTTPステータスエラー: ${res.status} ${res.statusText}`);
-        
-        const json = await res.json();
-        setQuestionsData(json);
-
-      } catch (err) {
-        // 読み込めなかった場合は、画面上にエラー理由を表示して停止する
-        console.error("データの読み込みエラー:", err);
-        
-        $("question").textContent = "data.json の読み込みに失敗しました";
-        $("answerInput").disabled = true;
-        $("controlsUnanswered").classList.add("hidden");
-        
-        $("explanationTitle").textContent = "エラーが発生しました";
-        $("explanationTitle").classList.replace("text-gray-500", "text-red-600");
-        $("explanation").innerHTML = `
-          <div class="text-red-600 font-bold mb-3">詳細: ${escapeHtml(err.message || err)}</div>
-          <ul class="list-disc pl-5 space-y-2 text-gray-600">
-            <li>同じフォルダ（階層）に <code>data.json</code> が配置されているか確認してください。</li>
-            <li><strong>ローカルで直接HTMLを開いている場合（アドレスバーが <code>file:///...</code> の場合）</strong>、ブラウザのセキュリティ制限により <code>data.json</code> を読み込めません。VS CodeのLive Server拡張機能などを使用して、Webサーバー経由（<code>http://localhost...</code>）で開いてください。</li>
-          </ul>
-        `;
-        $("resultArea").classList.remove("hidden");
-        $("explanationContainer").classList.remove("hidden");
-        $("idPill").textContent = "Error";
-        $("statusPill").outerHTML = `<span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">読込エラー</span>`;
-      }
-    }
-
-    // --- イベントリスナー ---
-    $("submitBtn").addEventListener("click", submitAnswer);
-    $("skipBtn").addEventListener("click", nextQuestion);
-    $("nextBtn").addEventListener("click", nextQuestion);
-
-    // エンターキー全体の制御
-    document.addEventListener("keydown", (e) => {
-      // 出題タブが表示されている時のみ動作
-      if (!$("viewQuiz").classList.contains("hidden") && e.key === "Enter") {
-        e.preventDefault();
-        if (!isAnswered && !$("answerInput").disabled) {
-          submitAnswer();
-        } else if (isAnswered) {
-          nextQuestion();
-        }
-      }
+      const haystack = [q.id, q.question, (Array.isArray(q.answer) ? q.answer.join(" ") : ""), q.explanation || ""].join(" ").toLowerCase();
+      return haystack.includes(search);
     });
 
-    $("tabQuiz").addEventListener("click", () => showTab("quiz"));
-    $("tabList").addEventListener("click", () => showTab("list"));
-    $("tabSettings").addEventListener("click", () => showTab("settings"));
+    if (filtered.length === 0) {
+      body.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">該当する問題が見つかりません</td></tr>`;
+      return;
+    }
 
-    $("listSearch").addEventListener("input", renderList);
-    $("listFilter").addEventListener("change", renderList);
-    $("reloadListBtn").addEventListener("click", renderList);
+    for (const q of filtered) {
+      const tr = document.createElement("tr");
+      tr.className = "hover:bg-gray-50 transition-colors";
 
-    $("saveRatesBtn").addEventListener("click", saveRateSettings);
-    $("resetProgressBtn").addEventListener("click", resetProgress);
+      const state = getQuestionState(q.id);
+      const answers = Array.isArray(q.answer) ? q.answer.join(" / ") : "";
+      const linkHtml = q.link ? `<a href="${escapeAttribute(q.link)}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-1" title="参考リンク">🔗</a>` : "";
 
-    // アプリ起動
-    loadData();
-  </script>
+      tr.innerHTML = `
+        <td class="px-4 py-3 whitespace-nowrap">${getStatusBadgeHTML(state)}</td>
+        <td class="px-4 py-3 text-gray-500 font-mono text-xs">${escapeHtml(q.id)}</td>
+        <td class="px-4 py-3 font-medium text-gray-800">${escapeHtml(q.question)}</td>
+        <td class="px-4 py-3 text-gray-600 hidden md:table-cell">${escapeHtml(answers)}</td>
+        <td class="px-4 py-3 text-gray-500 text-sm hidden lg:table-cell max-w-xs truncate" title="${escapeHtml(q.explanation || "")}">${escapeHtml(q.explanation || "")}${linkHtml}</td>
+        <td class="px-4 py-3 text-center whitespace-nowrap">
+          <button class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm" data-id="${escapeAttribute(q.id)}">開く</button>
+        </td>
+      `;
+
+      tr.querySelector("button").addEventListener("click", () => {
+        currentQuestion = q;
+        lastQuestionId = q.id;
+        showTab("quiz");
+        renderQuestion();
+      });
+
+      body.appendChild(tr);
+    }
+  }
+
+  function showTab(tab) {
+    $("viewQuiz").classList.toggle("hidden", tab !== "quiz");
+    $("viewList").classList.toggle("hidden", tab !== "list");
+    $("viewSettings").classList.toggle("hidden", tab !== "settings");
+
+    const tabs = { quiz: $("tabQuiz"), list: $("tabList"), settings: $("tabSettings") };
+    for (const key in tabs) {
+      if (key === tab) {
+        tabs[key].className = "px-4 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none whitespace-nowrap transition-colors";
+      } else {
+        tabs[key].className = "px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 focus:outline-none whitespace-nowrap transition-colors";
+      }
+    }
+
+    if (tab === "list") renderList();
+    if (tab === "settings") renderRates();
+  }
+
+  function renderRates() {
+    $("rateUnanswered").value = rates.unanswered;
+    $("rateWrong").value = rates.wrong;
+    $("rateMastered").value = rates.mastered;
+  }
+
+  function saveRateSettings() {
+    rates.unanswered = Math.max(0, Number($("rateUnanswered").value) || 0);
+    rates.wrong = Math.max(0, Number($("rateWrong").value) || 0);
+    rates.mastered = Math.max(0, Number($("rateMastered").value) || 0);
+    saveRates();
+
+    const btn = $("saveRatesBtn");
+    const originalText = btn.textContent;
+    btn.textContent = "✅ 保存しました";
+    btn.classList.replace("bg-gray-900", "bg-green-600");
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.classList.replace("bg-green-600", "bg-gray-900");
+    }, 2000);
+  }
+
+  function resetProgress() {
+    if (!confirm("学習履歴をリセットします。本当によろしいですか？")) return;
+    progress = {};
+    saveProgress();
+    updateStats();
+    renderList();
+    if (currentQuestion) renderQuestion();
+    alert("リセットが完了しました。");
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function escapeAttribute(str) {
+    return escapeHtml(str);
+  }
+
+  function setQuestionsData(json) {
+    if (!Array.isArray(json)) {
+      throw new Error("data.json の形式が不正です（配列ではありません）");
+    }
+
+    questions = json.map(item => ({
+      id: String(item.id || "").trim(),
+      question: String(item.question || "").trim(),
+      answer: Array.isArray(item.answer) ? item.answer.map(v => String(v)) : [],
+      explanation: String(item.explanation || "").trim(),
+      link: item.link ? String(item.link).trim() : ""
+    })).filter(q => q.id && q.question && q.answer.length > 0);
+
+    updateStats();
+    renderList();
+
+    if (questions.length === 0) {
+      currentQuestion = null;
+      renderQuestion();
+      return;
+    }
+
+    nextQuestion();
+  }
+
+  function showLoadError(message) {
+    $("question").textContent = "data.json の読み込みに失敗しました";
+    $("answerInput").disabled = true;
+    $("controlsUnanswered").classList.add("hidden");
+    $("resultArea").classList.remove("hidden");
+    $("resultBox").classList.add("hidden");
+    $("nextBtn").classList.add("hidden");
+    $("explanationContainer").classList.remove("hidden");
+    $("explanationTitle").textContent = "エラー";
+    $("explanation").innerHTML = `<div class="text-red-600 font-bold">${escapeHtml(message)}</div>`;
+    $("idPill").textContent = "ID: Error";
+    $("statusPill").outerHTML = `<span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">読込エラー</span>`;
+  }
+
+  async function loadData() {
+    let json;
+
+    try {
+      const res = await fetch(`${DATA_URL}?v=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      }
+      json = await res.json();
+    } catch (err) {
+      console.error("fetch/json エラー:", err);
+      showLoadError(err.message || String(err));
+      return;
+    }
+
+    try {
+      setQuestionsData(json);
+    } catch (err) {
+      console.error("描画エラー:", err);
+      showLoadError(err.message || String(err));
+    }
+  }
+
+  $("submitBtn").addEventListener("click", submitAnswer);
+  $("skipBtn").addEventListener("click", nextQuestion);
+  $("nextBtn").addEventListener("click", nextQuestion);
+
+  document.addEventListener("keydown", (e) => {
+    if (!$("viewQuiz").classList.contains("hidden") && e.key === "Enter") {
+      e.preventDefault();
+      if (!isAnswered && !$("answerInput").disabled) {
+        submitAnswer();
+      } else if (isAnswered) {
+        nextQuestion();
+      }
+    }
+  });
+
+  $("tabQuiz").addEventListener("click", () => showTab("quiz"));
+  $("tabList").addEventListener("click", () => showTab("list"));
+  $("tabSettings").addEventListener("click", () => showTab("settings"));
+
+  $("listSearch").addEventListener("input", renderList);
+  $("listFilter").addEventListener("change", renderList);
+  $("reloadListBtn").addEventListener("click", renderList);
+
+  $("saveRatesBtn").addEventListener("click", saveRateSettings);
+  $("resetProgressBtn").addEventListener("click", resetProgress);
+
+  loadData();
+</script>
 </body>
 </html>
