@@ -73,7 +73,7 @@
     "question": "共通鍵を生成する手法 → ？",
     "answer": [
       "DH・ECDH",
-      "ECDH"
+      "DH,ECDH"
     ],
     "explanation": "安全に共通鍵を共有するための鍵交換方式",
     "published": true
@@ -121,8 +121,8 @@
     "id": "public-key-main-02",
     "question": "公開鍵暗号方式の主流 → ？",
     "answer": [
-      "RSA",
-      "ECC"
+      "RSA,ECC",
+      "RSA・ECC"
     ],
     "explanation": "代表的な公開鍵暗号アルゴリズム",
     "published": true
@@ -135,6 +135,16 @@
       "mm1"
     ],
     "explanation": "到着ポアソン・サービス指数分布",
+    "published": true
+  },
+  {
+    "id": "rsa-vs-dh-01",
+    "question": "RSAとDH/ECDHの違い → ？",
+    "answer": [
+      "送るか作るか",
+      "鍵を送るか作るか"
+    ],
+    "explanation": "RSAは鍵を暗号化して送信、DH/ECDHは双方で鍵を生成",
     "published": true
   },
   {
