@@ -128,6 +128,15 @@
     "published": true
   },
   {
+    "id": "sha2-01",
+    "question": "デジタル署名で使うハッシュの主流 → ？",
+    "answer": [
+      "SHA-2"
+    ],
+    "explanation": "現在主流の安全なハッシュ関数群",
+    "published": true
+  },
+  {
     "id": "soc-01",
     "question": "複数機能を1チップに集積 → ？",
     "answer": [
