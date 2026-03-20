@@ -137,6 +137,16 @@
     "published": true
   },
   {
+    "id": "sha2-02",
+    "question": "SHA-2とは？",
+    "answer": [
+      "署名ハッシュ主流",
+      "デジタル署名ハッシュ主流"
+    ],
+    "explanation": "デジタル署名で用いられる代表的ハッシュ関数群",
+    "published": true
+  },
+  {
     "id": "soc-01",
     "question": "複数機能を1チップに集積 → ？",
     "answer": [
