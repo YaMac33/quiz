@@ -98,6 +98,16 @@
     "published": true
   },
   {
+    "id": "public-key-main-02",
+    "question": "公開鍵暗号方式の主流 → ？",
+    "answer": [
+      "RSA",
+      "ECC"
+    ],
+    "explanation": "代表的な公開鍵暗号アルゴリズム",
+    "published": true
+  },
+  {
     "id": "queue-01",
     "question": "待ち行列 → 基本モデルは？",
     "answer": [
