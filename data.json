@@ -60,6 +60,16 @@
     "link": "https://docs.google.com/document/d/1A7fan5xHBvR1edIoV0rPvAm1Xd4zjn1NKJtCmknLNhE/edit?usp=drivesdk"
   },
   {
+    "id": "ecdhe-02",
+    "question": "ECDHE → どんな特徴？",
+    "answer": [
+      "一時鍵で共通鍵生成",
+      "毎回ランダム鍵"
+    ],
+    "explanation": "セッションごとに一時鍵を使い前方秘匿性を実現",
+    "published": true
+  },
+  {
     "id": "functional-requirement-01",
     "question": "ヒアリングで利用者から得る要求事項 → ？",
     "answer": [
