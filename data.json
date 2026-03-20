@@ -196,6 +196,15 @@
     "published": true
   },
   {
+    "id": "ssl-01",
+    "question": "SSL → 何の略？",
+    "answer": [
+      "Secure Sockets Layer"
+    ],
+    "explanation": "通信を暗号化する旧プロトコルの正式名称",
+    "published": true
+  },
+  {
     "id": "tcpip-app-osi-01",
     "question": "TCP/IPのアプリ層 → OSI参照モデルで対応は？",
     "answer": [
