@@ -274,6 +274,15 @@
     "link": "https://docs.google.com/document/d/16wC6i6K9DT0sJ_xF2eBahbg1RgYmsxqLJMIbVltgJHY/edit?usp=drivesdk"
   },
   {
+    "id": "three-tier-01",
+    "question": "3層クライアントサーバの構成 → ？",
+    "answer": [
+      "プレゼンテーション層,ファンクション層,データ層"
+    ],
+    "explanation": "UI・業務ロジック・データ管理の3層で構成",
+    "published": true
+  },
+  {
     "id": "tls-01",
     "question": "TLS → 何の略？",
     "answer": [
