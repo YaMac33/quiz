@@ -86,7 +86,8 @@
       "AH・ESP"
     ],
     "explanation": "AHやESPで完全性・認証を提供する",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/1UjJY-sFpRbaOHlozWKxP3uhoN8JNzc5qoWSmIknA6eI/edit?usp=drivesdk"
   },
   {
     "id": "key-exchange-01",
