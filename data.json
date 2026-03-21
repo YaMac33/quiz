@@ -79,6 +79,16 @@
     "published": true
   },
   {
+    "id": "ipsec-integrity-01",
+    "question": "IPsecで改ざん検知を行う仕組み → ？",
+    "answer": [
+      "AH,ESP",
+      "AH・ESP"
+    ],
+    "explanation": "AHやESPで完全性・認証を提供する",
+    "published": true
+  },
+  {
     "id": "key-exchange-01",
     "question": "共通鍵を生成する手法 → ？",
     "answer": [
