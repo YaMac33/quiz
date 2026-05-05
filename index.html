@@ -1,0 +1,240 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スマート一問一答アプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-white text-gray-800 font-sans antialiased min-h-screen">
+  <div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+
+    <header class="mb-8">
+      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight mb-6">一問一答アプリ</h1>
+
+      <nav class="flex space-x-2 sm:space-x-4 border-b border-gray-200 overflow-x-auto">
+        <button id="tabQuiz" class="px-4 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none whitespace-nowrap transition-colors">出題モード</button>
+        <button id="tabList" class="px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 focus:outline-none whitespace-nowrap transition-colors">問題一覧</button>
+        <button id="tabSettings" class="px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 focus:outline-none whitespace-nowrap transition-colors">学習設定</button>
+      </nav>
+    </header>
+
+    <!-- ==================== 出題タブ ==================== -->
+    <section id="viewQuiz" class="fade-in">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 mb-8">
+        <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
+          <div class="text-xs sm:text-sm font-medium text-gray-400 mb-1">未回答</div>
+          <div id="statUnanswered" class="text-2xl sm:text-3xl font-bold text-gray-700">0</div>
+        </div>
+        <div class="bg-red-50 border border-red-100 rounded-2xl p-4 shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
+          <div class="text-xs sm:text-sm font-medium text-red-400 mb-1">不正解</div>
+          <div id="statWrong" class="text-2xl sm:text-3xl font-bold text-red-600">0</div>
+        </div>
+        <div class="bg-green-50 border border-green-100 rounded-2xl p-4 shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
+          <div class="text-xs sm:text-sm font-medium text-green-500 mb-1">マスター</div>
+          <div id="statMastered" class="text-2xl sm:text-3xl font-bold text-green-600">0</div>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
+          <div class="text-xs sm:text-sm font-medium text-yellow-500 mb-1">お気に入り</div>
+          <div id="statFavorites" class="text-2xl sm:text-3xl font-bold text-yellow-600">0</div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-3xl p-6 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <!-- メタ情報 -->
+<div class="flex items-start justify-between gap-4 mb-6">
+  <div class="flex items-center gap-3 flex-wrap">
+    <span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">読込中</span>
+    <span id="idPill" class="text-xs font-medium text-gray-400">ID: -</span>
+    <button id="copyIdBtn" type="button" class="text-xs font-bold text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg px-2 py-1 hover:bg-blue-50 transition-colors">コピー</button>
+    <span id="favoriteBadge" class="hidden inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">★ お気に入り</span>
+  </div>
+
+  <button id="favoriteBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-yellow-200 bg-white text-yellow-700 hover:bg-yellow-50 font-bold text-sm transition-colors">
+            <span id="favoriteBtnIcon">☆</span>
+            <span id="favoriteBtnText">お気に入り登録</span>
+          </button>
+        </div>
+
+        <h2 id="question" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-8 leading-relaxed">
+          data.js を読み込んでいます...
+        </h2>
+
+        <div class="relative mb-6">
+          <input id="answerInput" type="text" placeholder="答えを入力してください"
+                 class="w-full px-5 py-4 text-lg bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
+                 autocomplete="off">
+        </div>
+
+        <div id="controlsUnanswered" class="flex gap-3 mt-4 flex-wrap">
+          <button id="submitBtn" class="flex-1 min-w-[180px] bg-gray-900 hover:bg-gray-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all active:scale-[0.98] text-lg">
+            回答する
+          </button>
+          <button id="skipBtn" class="bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 font-bold py-3.5 px-6 rounded-xl shadow-sm transition-all active:scale-[0.98]">
+            スキップ
+          </button>
+        </div>
+
+        <div id="resultArea" class="hidden mt-6 space-y-4 fade-in">
+          <div id="resultBox" class="p-5 rounded-xl text-center font-bold text-xl border-2 flex flex-col items-center justify-center hidden"></div>
+
+          <div id="explanationContainer" class="bg-gray-50 p-5 rounded-xl border border-gray-100 hidden">
+            <div class="flex items-center gap-2 mb-2 text-gray-500">
+              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+              </svg>
+              <span id="explanationTitle" class="font-bold text-sm">解説</span>
+            </div>
+            <div id="explanation" class="text-gray-700 leading-relaxed text-sm sm:text-base"></div>
+          </div>
+
+          <button id="nextBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all active:scale-[0.98] mt-4 flex justify-center items-center gap-2 text-lg hidden">
+            次の問題へ
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="text-gray-400 text-xs mt-8 text-center space-y-1">
+          <p>判定は完全一致です。不正解は2回連続正解でマスターに戻ります。</p>
+          <p>お気に入り登録した問題は一覧で絞り込み・優先出題できます。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 一覧タブ ==================== -->
+    <section id="viewList" class="hidden fade-in">
+      <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row gap-3 mb-6">
+          <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <input id="listSearch" type="text" placeholder="キーワードで検索..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors">
+          </div>
+
+          <div class="flex gap-3 flex-wrap">
+            <select id="listFilter" class="block w-full sm:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg border bg-white cursor-pointer">
+              <option value="all">すべての状態</option>
+              <option value="unanswered">未回答のみ</option>
+              <option value="wrong">不正解のみ</option>
+              <option value="mastered">マスターのみ</option>
+            </select>
+
+            <select id="favoriteFilter" class="block w-full sm:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg border bg-white cursor-pointer">
+              <option value="all">お気に入り: すべて</option>
+              <option value="only">お気に入りのみ</option>
+              <option value="exclude">お気に入り以外</option>
+            </select>
+
+            <button id="reloadListBtn" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors whitespace-nowrap">
+              更新
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-200">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold text-gray-500 whitespace-nowrap">状態</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-500 whitespace-nowrap">★</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-500 whitespace-nowrap">ID</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-500">問題</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-500 hidden md:table-cell">答え</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-500 hidden lg:table-cell">解説</th>
+                <th class="px-4 py-3 text-center font-semibold text-gray-500 whitespace-nowrap">操作</th>
+              </tr>
+            </thead>
+            <tbody id="listBody" class="bg-white divide-y divide-gray-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 設定タブ ==================== -->
+    <section id="viewSettings" class="hidden fade-in">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+          <h2 class="text-xl font-bold text-gray-800 mb-2">出題率のバランス設定</h2>
+          <p class="text-sm text-gray-500 mb-6">合計は100でなくてもOKです。入力された数値の比率でランダムに出題されます。</p>
+
+          <div class="space-y-4 mb-8">
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <label class="font-medium text-gray-700">未回答</label>
+              <div class="flex items-center gap-2">
+                <input id="rateUnanswered" type="number" min="0" class="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-right focus:ring-blue-500 focus:border-blue-500">
+                <span class="text-gray-500 text-sm">重み</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-50">
+              <label class="font-medium text-red-700">不正解</label>
+              <div class="flex items-center gap-2">
+                <input id="rateWrong" type="number" min="0" class="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-right focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <span class="text-gray-500 text-sm">重み</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-50">
+              <label class="font-medium text-green-700">マスター</label>
+              <div class="flex items-center gap-2">
+                <input id="rateMastered" type="number" min="0" class="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-right focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <span class="text-gray-500 text-sm">重み</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-50">
+              <label class="font-medium text-yellow-700">お気に入り優先出題</label>
+              <div class="flex items-center gap-2">
+                <input id="favoriteBoost" type="number" min="0" class="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-right focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <span class="text-gray-500 text-sm">%</span>
+              </div>
+            </div>
+          </div>
+
+          <button id="saveRatesBtn" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-xl shadow transition-colors">
+            出題率を保存する
+          </button>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col gap-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">お気に入り出題モード</h2>
+            <p class="text-sm text-gray-500 mb-4">お気に入りだけから出題したい場合に切り替えます。</p>
+
+            <div class="space-y-3">
+              <button id="favoriteModeOnBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-xl shadow transition-colors">
+                お気に入り出題モード ON
+              </button>
+              <button id="favoriteModeOffBtn" class="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-bold py-3 px-4 rounded-xl shadow-sm transition-colors">
+                通常出題モードに戻す
+              </button>
+            </div>
+
+            <p id="favoriteModeStatus" class="mt-4 text-sm font-medium text-gray-600">現在: 通常出題モード</p>
+          </div>
+
+          <div class="p-4 bg-red-50 rounded-xl border border-red-100">
+            <h3 class="text-red-800 font-bold mb-3 flex items-center gap-2">
+              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+              危険な操作
+            </h3>
+            <button id="resetProgressBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow transition-colors">
+              学習履歴を完全にリセット
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
